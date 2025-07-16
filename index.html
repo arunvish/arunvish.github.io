@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vibrate Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    button {
+      font-size: 20px;
+      padding: 15px 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vibrate Test</h1>
+  <button onclick="vibrateDevice()">Vibrate Phone</button>
+
+  <script>
+    function vibrateDevice() {
+      if ("vibrate" in navigator) {
+        const didVibrate = navigator.vibrate(200); // vibrate for 200ms
+        if (!didVibrate) {
+          alert("Vibration API call was made, but device did not vibrate.");
+        }
+      } else {
+        alert("Vibration API is not supported on this device or browser.");
+      }
+    }
+  </script>
+</body>
+</html>
