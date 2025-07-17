@@ -9,27 +9,86 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 50px;
+      max-width: 600px;
+      margin: 0 auto;
     }
     button {
       font-size: 20px;
       padding: 15px 30px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+    button:active {
+      background-color: #3e8e41;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+    .error {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    .success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
     }
   </style>
 </head>
 <body>
   <h1>Vibrate Test</h1>
-  <button onclick="vibrateDevice()">Vibrate Phone</button>
+  <p>Tap the button below to test device vibration</p>
+  <button id="vibrateButton" onclick="vibrateDevice()">Vibrate Phone</button>
+  <div id="status"></div>
 
   <script>
-    function vibrateDevice() {
-      if ("vibrate" in navigator) {
-        const didVibrate = navigator.vibrate(200); // vibrate for 200ms
-        if (!didVibrate) {
-          alert("Vibration API call was made, but device did not vibrate.");
+    function showStatus(message, isError = false) {
+      const statusElement = document.getElementById('status');
+      statusElement.textContent = message;
+      statusElement.style.display = 'block';
+      statusElement.className = isError ? 'error' : 'success';
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 3000);
+    }
+
+    async function vibrateDevice() {
+      try {
+        // Try standard vibration API first
+        if ("vibrate" in navigator) {
+          const didVibrate = navigator.vibrate(200);
+          if (didVibrate) {
+            showStatus("Device vibration activated!");
+            return;
+          }
         }
-      } else {
-        alert("Vibration API is not supported on this device or browser.");
+
+        // Fallback for iOS Safari using audio context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        oscillator.connect(audioContext.destination);
+        oscillator.frequency.value = 1; // Very low frequency
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.2); // 200ms duration
+        showStatus("Alternative feedback method activated!");
+      } catch (error) {
+        console.error('Vibration error:', error);
+        showStatus("Vibration is not supported on this device/browser.", true);
       }
+    }
+
+    // Check if we're running on iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      document.getElementById('vibrateButton').addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent double-firing on iOS
+      });
     }
   </script>
 </body>
