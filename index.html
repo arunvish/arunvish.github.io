@@ -3,27 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Vibrate Example</title>
+  <title>Haptic Feedback Example</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
       text-align: center;
       padding: 50px;
       max-width: 600px;
       margin: 0 auto;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     button {
       font-size: 20px;
       padding: 15px 30px;
-      background-color: #4CAF50;
+      background-color: #007AFF; /* iOS blue */
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
       margin: 20px 0;
+      -webkit-tap-highlight-color: transparent;
     }
     button:active {
-      background-color: #3e8e41;
+      background-color: #0051A8;
+      transform: scale(0.98);
     }
     #status {
       margin-top: 20px;
@@ -42,9 +47,9 @@
   </style>
 </head>
 <body>
-  <h1>Vibrate Test</h1>
-  <p>Tap the button below to test device vibration</p>
-  <button id="vibrateButton" onclick="vibrateDevice()">Vibrate Phone</button>
+  <h1>Haptic Feedback Test</h1>
+  <p>Tap the button below to test haptic feedback</p>
+  <button id="hapticButton">Tap for Feedback</button>
   <div id="status"></div>
 
   <script>
@@ -58,38 +63,54 @@
       }, 3000);
     }
 
-    async function vibrateDevice() {
+    // Function to trigger haptic feedback
+    async function triggerHaptic() {
       try {
-        // Try standard vibration API first
-        if ("vibrate" in navigator) {
-          const didVibrate = navigator.vibrate(200);
-          if (didVibrate) {
-            showStatus("Device vibration activated!");
-            return;
-          }
+        // Try using iOS haptic engine
+        if (window.Haptics && window.Haptics.impact) {
+          await window.Haptics.impact({ style: 'medium' });
+          showStatus('Haptic feedback triggered!');
+          return;
         }
 
-        // Fallback for iOS Safari using audio context
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        oscillator.connect(audioContext.destination);
-        oscillator.frequency.value = 1; // Very low frequency
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.2); // 200ms duration
-        showStatus("Alternative feedback method activated!");
+        // Try using standard vibration API
+        if ('vibrate' in navigator) {
+          navigator.vibrate([10, 50, 10]);
+          showStatus('Vibration triggered!');
+          return;
+        }
+
+        // If no haptic/vibration available, try quick visual feedback
+        const button = document.getElementById('hapticButton');
+        button.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          button.style.transform = 'scale(1)';
+        }, 100);
+        
+        showStatus('Visual feedback only - haptics not available', true);
       } catch (error) {
-        console.error('Vibration error:', error);
-        showStatus("Vibration is not supported on this device/browser.", true);
+        console.error('Haptic error:', error);
+        showStatus('Haptic feedback not supported on this device', true);
       }
     }
 
-    // Check if we're running on iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-      document.getElementById('vibrateButton').addEventListener('touchstart', function(e) {
-        e.preventDefault(); // Prevent double-firing on iOS
-      });
-    }
+    // Set up event listeners
+    document.getElementById('hapticButton').addEventListener('touchstart', function(e) {
+      e.preventDefault(); // Prevent default touch behavior
+      triggerHaptic();
+    });
+
+    // For non-touch devices
+    document.getElementById('hapticButton').addEventListener('click', function(e) {
+      if (!e.sourceCapabilities || !e.sourceCapabilities.firesTouchEvents) {
+        triggerHaptic();
+      }
+    });
+
+    // Prevent scrolling when touching the button
+    document.getElementById('hapticButton').addEventListener('touchmove', function(e) {
+      e.preventDefault();
+    }, { passive: false });
   </script>
 </body>
 </html>
